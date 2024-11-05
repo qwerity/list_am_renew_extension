@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 15px;
+            width: 220px;
+        }
+        label, #status {
+            margin-top: 10px;
+            display: block;
+            font-weight: bold;
+        }
+        #startRenew {
+            width: 100%;
+            padding: 8px;
+            margin-top: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #startRenew:hover {
+            background-color: #45a049;
+        }
+        #delay {
+            width: 100%;
+            padding: 5px;
+            margin-top: 5px;
+            box-sizing: border-box;
+        }
+        #status {
+            margin-top: 15px;
+            color: #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <label for="delay">Set Delay (ms):</label>
+    <input type="number" id="delay" value="100" min="0" />
+
+    <button id="startRenew">Start Renew</button>
+    
+    <div id="status"></div> <!-- Status message will appear here -->
+
+    <script src="popup.js"></script>
+</body>
+</html>
