@@ -7,6 +7,23 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+// Function to show notifications directly from popup
+function showNotification(title, message) {
+  console.log("Showing notification:", title, message);
+  chrome.notifications.create({
+    type: "basic",
+    iconUrl: "icon.png",
+    title: title,
+    message: message
+  }, (notificationId) => {
+    if (chrome.runtime.lastError) {
+      console.error("Notification error:", chrome.runtime.lastError);
+    } else {
+      console.log("Notification shown with ID:", notificationId);
+    }
+  });
+}
+
 document.getElementById('startRenew').addEventListener('click', () => {
   const delay = parseInt(document.getElementById('delay').value);
   const statusDiv = document.getElementById('status');
@@ -14,6 +31,9 @@ document.getElementById('startRenew').addEventListener('click', () => {
   
   // Save the delay value for next time
   chrome.storage.local.set({delayValue: delay});
+
+  // Show notification that process is starting
+  showNotification("Process Started", "Renew process has started");
 
   // Execute the renew function in the current tab
   chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
@@ -31,6 +51,7 @@ document.getElementById('startRenew').addEventListener('click', () => {
     }).catch(err => {
       console.error("Error injecting script:", err);
       statusDiv.textContent = "Error: " + err.message;
+      showNotification("Error", "Failed to inject script: " + err.message);
     });
   });
 });
@@ -55,12 +76,15 @@ function injectRenewProcess(delay) {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.message === "done") {
     document.getElementById('status').textContent = "Renew process completed!";
+    showNotification("Complete", "Renew process completed successfully!");
     
     // Reload the current tab
     chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
       chrome.tabs.reload(tabs[0].id, {bypassCache: true});
     });
   } else if (request.message === "error") {
-    document.getElementById('status').textContent = "Error: " + (request.error || "Unknown error");
+    const errorMsg = request.error || "Unknown error";
+    document.getElementById('status').textContent = "Error: " + errorMsg;
+    showNotification("Error", "Process error: " + errorMsg);
   }
 });
