@@ -1,10 +1,23 @@
 // This function will be called from popup.js when the user clicks "Start Renew"
 async function renewAllItems(delay) {
-    // Use default delay if not provided
-    delay = delay || 10;
+    // Get the default delay from storage if not provided
+    if (delay === undefined || delay === null) {
+        try {
+            const result = await new Promise(resolve => {
+                chrome.storage.local.get(['delayValue'], resolve);
+            });
+            delay = result.delayValue || 10; // Default to 10ms if no stored value
+        } catch (error) {
+            console.error("Error retrieving delay value:", error);
+            delay = 10; // Default to 10ms if error
+        }
+    }
+    
+    console.log(`Starting renewal process with ${delay}ms delay between items`);
     
     // Select all elements that have the renew function in their 'onclick' attribute
     const items = document.querySelectorAll('a[onclick^="renew("]');
+    console.log(`Found ${items.length} items to renew`);
 
     for (let item of items) {
         // Extract the item ID from the onclick attribute

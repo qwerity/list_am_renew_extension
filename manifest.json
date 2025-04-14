@@ -19,6 +19,12 @@
           "js": ["renew.js"]
       }
   ],
+  "web_accessible_resources": [
+    {
+      "resources": ["renew.js"],
+      "matches": ["*://www.list.am/*"]
+    }
+  ],
   "background": {
     "service_worker": "background.js"
   }

@@ -13,6 +13,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       title: "Renew Process Complete",
       message: "All items have been renewed successfully!"
     });
+  } else if (request.message === "error") {
+    // Handle error message
+    chrome.notifications.create({
+      type: "basic",
+      iconUrl: "icon.png",
+      title: "Renew Process Error",
+      message: request.error || "An unknown error occurred"
+    });
   }
   
   return true; // Keep the message channel open for async responses

@@ -36,6 +36,19 @@ function clearState() {
   });
 }
 
+// Get the delay value from storage
+async function getDelay() {
+  try {
+    const result = await new Promise(resolve => {
+      chrome.storage.local.get(['delayValue'], resolve);
+    });
+    return result.delayValue || 1000; // Default to 1000ms if no stored value
+  } catch (error) {
+    console.error("Error retrieving delay value:", error);
+    return 1000; // Default to 1000ms if error
+  }
+}
+
 async function processCurrentItem() {
   let state = loadState();
   
@@ -58,7 +71,9 @@ async function processCurrentItem() {
   try {
     renewElements[state.currentIndex].click();
     
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Use the configurable delay
+    const processingDelay = await getDelay();
+    await new Promise(resolve => setTimeout(resolve, processingDelay));
     
     const submitButton = document.querySelector('#submit_dlg_button');
     if (submitButton) {
