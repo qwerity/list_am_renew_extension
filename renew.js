@@ -1,5 +1,8 @@
 // This function will be called from popup.js when the user clicks "Start Renew"
-async function renewAllItems() {
+async function renewAllItems(delay) {
+    // Use default delay if not provided
+    delay = delay || 10;
+    
     // Select all elements that have the renew function in their 'onclick' attribute
     const items = document.querySelectorAll('a[onclick^="renew("]');
 

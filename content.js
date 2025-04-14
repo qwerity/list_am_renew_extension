@@ -15,7 +15,7 @@ function initState() {
 function saveState(state) {
   localStorage.setItem(STATE_KEY, JSON.stringify(state));
   // Notify popup about state change
-  browser.runtime.sendMessage({
+  chrome.runtime.sendMessage({
     type: 'stateUpdate',
     state: state,
     status: `Processing item ${state.currentIndex + 1}/${state.totalItems}`
@@ -29,7 +29,7 @@ function loadState() {
 
 function clearState() {
   localStorage.removeItem(STATE_KEY);
-  browser.runtime.sendMessage({
+  chrome.runtime.sendMessage({
     type: 'stateUpdate',
     state: null,
     status: 'Process stopped'
@@ -46,7 +46,7 @@ async function processCurrentItem() {
   const renewElements = document.querySelectorAll('a[onclick*="renew"]');
   
   if (state.currentIndex >= renewElements.length) {
-    browser.runtime.sendMessage({
+    chrome.runtime.sendMessage({
       type: 'stateUpdate',
       state: state,
       status: 'All items processed!'
@@ -90,7 +90,7 @@ function stopProcess() {
 }
 
 // Listen for commands from popup
-browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   switch (message.action) {
     case 'start':
       startProcess();
@@ -100,13 +100,14 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
       break;
     case 'getState':
       const state = loadState();
-      browser.runtime.sendMessage({
+      chrome.runtime.sendMessage({
         type: 'stateUpdate',
         state: state,
         status: state ? `Processing item ${state.currentIndex + 1}/${state.totalItems}` : 'Ready'
       });
       break;
   }
+  return true; // Keep the message channel open for async responses
 });
 
 // Check and continue on page load

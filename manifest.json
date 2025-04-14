@@ -1,10 +1,11 @@
 {
-  "manifest_version": 2,
+  "manifest_version": 3,
   "name": "List.am Renew Extension",
   "version": "1.0.2",
   "description": "Automate renew actions on List.am with a delay.",
-  "permissions": ["activeTab", "webRequest", "notifications"],
-  "browser_action": {
+  "permissions": ["activeTab", "storage", "notifications", "scripting"],
+  "host_permissions": ["*://www.list.am/*"],
+  "action": {
       "default_popup": "popup.html",
       "default_icon": {
           "16": "icon.png",
@@ -17,5 +18,8 @@
           "matches": ["*://www.list.am/*"],
           "js": ["renew.js"]
       }
-  ]
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
 }
