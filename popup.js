@@ -24,6 +24,26 @@ function showNotification(title, message) {
   });
 }
 
+// Function to reload the current tab
+function reloadCurrentTab() {
+  chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+    if (tabs && tabs[0] && tabs[0].id) {
+      console.log("Reloading tab with ID:", tabs[0].id);
+      chrome.tabs.reload(tabs[0].id, {bypassCache: true}, () => {
+        if (chrome.runtime.lastError) {
+          console.error("Error reloading tab:", chrome.runtime.lastError);
+          // Try again after a short delay
+          setTimeout(() => {
+            chrome.tabs.reload(tabs[0].id, {bypassCache: true});
+          }, 1000);
+        }
+      });
+    } else {
+      console.error("Could not find active tab to reload");
+    }
+  });
+}
+
 document.getElementById('startRenew').addEventListener('click', () => {
   const delay = parseInt(document.getElementById('delay').value);
   const statusDiv = document.getElementById('status');
@@ -61,6 +81,7 @@ function injectRenewProcess(delay) {
   // Check if renewAllItems is available now
   if (typeof renewAllItems === 'function') {
     renewAllItems(delay).then(() => {
+      console.log("Renew process completed, sending done message");
       chrome.runtime.sendMessage({message: "done"});
     }).catch(err => {
       console.error("Error in renewAllItems:", err);
@@ -74,17 +95,20 @@ function injectRenewProcess(delay) {
 
 // Listen for messages from the background script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  console.log("Received message in popup:", request);
+  
   if (request.message === "done") {
     document.getElementById('status').textContent = "Renew process completed!";
     showNotification("Complete", "Renew process completed successfully!");
     
-    // Reload the current tab
-    chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
-      chrome.tabs.reload(tabs[0].id, {bypassCache: true});
-    });
+    // Reload the current tab with improved mechanism
+    console.log("Attempting to reload page after completion");
+    reloadCurrentTab();
   } else if (request.message === "error") {
     const errorMsg = request.error || "Unknown error";
     document.getElementById('status').textContent = "Error: " + errorMsg;
     showNotification("Error", "Process error: " + errorMsg);
   }
+  
+  return true; // Keep the message channel open
 });

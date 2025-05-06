@@ -66,12 +66,24 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       title: "Renew Process Complete",
       message: "All items have been renewed successfully!"
     });
+    
+    // Forward the message to the popup if it's not already from there
+    if (sender.tab) {
+      console.log("Forwarding completion message to popup");
+      chrome.runtime.sendMessage({message: "done"});
+    }
   } else if (request.message === "error") {
     // Handle error message
     createNotification({
       title: "Renew Process Error",
       message: request.error || "An unknown error occurred"
     });
+    
+    // Forward the error to the popup if it's not already from there
+    if (sender.tab) {
+      console.log("Forwarding error message to popup");
+      chrome.runtime.sendMessage({message: "error", error: request.error});
+    }
   }
   
   return true; // Keep the message channel open for async responses

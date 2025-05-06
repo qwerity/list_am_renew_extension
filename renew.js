@@ -19,6 +19,11 @@ async function renewAllItems(delay) {
     const items = document.querySelectorAll('a[onclick^="renew("]');
     console.log(`Found ${items.length} items to renew`);
 
+    if (items.length === 0) {
+        console.log("No items found to renew");
+        return Promise.resolve(); // Resolve immediately if no items
+    }
+
     for (let item of items) {
         // Extract the item ID from the onclick attribute
         const itemId = item.getAttribute('onclick').match(/\d+/)[0];
@@ -47,4 +52,7 @@ async function renewAllItems(delay) {
         // Wait for the specified delay before moving to the next item
         await new Promise(resolve => setTimeout(resolve, delay));
     }
+    
+    console.log("Renewal process completed for all items");
+    return Promise.resolve(); // Explicitly resolve the promise
 }
