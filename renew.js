@@ -33,11 +33,18 @@ async function renewAllItems(delay) {
             const response = await fetch(`https://www.list.am/ad-renew?i=${itemId}`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    // Add any other necessary headers here
+                    "accept": "*/*",
+                    "accept-language": "en-US,en;q=0.9,hy;q=0.8,ru;q=0.7",
+                    "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+                    "priority": "u=1, i",
+                    "sec-fetch-dest": "empty",
+                    "sec-fetch-mode": "cors",
+                    "sec-fetch-site": "same-origin",
+                    "sec-gpc": "1",
+                    "x-requested-with": "XMLHttpRequest"
                 },
-                body: 'q=&c=-1&_t=&_form_action=&form0_form_visited=1' // Based on HAR data
+                body: "open_to_price_negotiation=1&repeat=0&payment_method=0&use_max_renew_count=&_form_action=&form0_form_visited=1",
+                mode: "cors",
             });
 
             if (response.ok) {
