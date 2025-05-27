@@ -175,5 +175,6 @@ function republishAllItemsInjected(delay) {
     }
     console.log("Republish process completed for all items");
     chrome.runtime.sendMessage({message: "done"});
+    window.location.reload(); // Refresh the page after all items are republished
   })();
 }
