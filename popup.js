@@ -118,3 +118,62 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   
   return true; // Keep the message channel open
 });
+
+document.getElementById('rePublish').addEventListener('click', () => {
+  const delay = parseInt(document.getElementById('delay').value) || 10;
+  const statusDiv = document.getElementById('status');
+  statusDiv.textContent = "Starting republish process...";
+  showNotification("Process Started", "RePublish process has started");
+
+  chrome.storage.local.set({delayValue: delay}); // Save delay for consistency
+
+  chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+    chrome.scripting.executeScript({
+      target: {tabId: tabs[0].id},
+      func: republishAllItemsInjected,
+      args: [delay]
+    });
+  });
+});
+
+// Function to be injected into the tab for republishing
+function republishAllItemsInjected(delay) {
+  // Select all elements that have the renew function in their 'onclick' attribute
+  const items = document.querySelectorAll('a[onclick^="renew("]');
+  console.log(`Found ${items.length} items to republish`);
+
+  async function republishItem(itemId) {
+    try {
+      await fetch(`https://www.list.am/rtao?type=5&post_id=${itemId}&_rtt=1`, {
+        method: 'POST',
+        headers: {
+          "accept": "*/*",
+          "accept-language": "en-US,en;q=0.9,hy;q=0.8,ru;q=0.7",
+          "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+          "priority": "u=1, i",
+          "sec-fetch-dest": "empty",
+          "sec-fetch-mode": "cors",
+          "sec-fetch-site": "same-origin",
+          "sec-gpc": "1",
+          "x-requested-with": "XMLHttpRequest"
+        },
+        body: "payment_method=&_form_action=&form0_form_visited=1",
+        mode: "cors",
+        credentials: "include"
+      });
+      console.log(`Republished item ${itemId} successfully.`);
+    } catch (error) {
+      console.error(`Error republishing item ${itemId}:`, error);
+    }
+  }
+
+  (async () => {
+    for (let item of items) {
+      const itemId = item.getAttribute('onclick').match(/\d+/)[0];
+      await republishItem(itemId);
+      await new Promise(resolve => setTimeout(resolve, delay)); // Use the same delay as renew
+    }
+    console.log("Republish process completed for all items");
+    chrome.runtime.sendMessage({message: "done"});
+  })();
+}
