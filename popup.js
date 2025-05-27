@@ -138,8 +138,8 @@ document.getElementById('rePublish').addEventListener('click', () => {
 
 // Function to be injected into the tab for republishing
 function republishAllItemsInjected(delay) {
-  // Select all elements that have the renew function in their 'onclick' attribute
-  const items = document.querySelectorAll('a[onclick^="renew("]');
+  // Select all elements that have the republish class and an onclick attribute containing /rtao?type=5&post_id
+  const items = Array.from(document.querySelectorAll('a.ad-action-wrapper.republish[onclick*="/rtao?type=5"]'));
   console.log(`Found ${items.length} items to republish`);
 
   async function republishItem(itemId) {
@@ -169,7 +169,14 @@ function republishAllItemsInjected(delay) {
 
   (async () => {
     for (let item of items) {
-      const itemId = item.getAttribute('onclick').match(/\d+/)[0];
+      // Extract post_id from the onclick attribute
+      const onclick = item.getAttribute('onclick');
+      const match = onclick.match(/post_id=(\d+)/);
+      if (!match) {
+        console.warn('No post_id found in republish button:', onclick);
+        continue;
+      }
+      const itemId = match[1];
       await republishItem(itemId);
       await new Promise(resolve => setTimeout(resolve, delay)); // Use the same delay as renew
     }
