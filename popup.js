@@ -1,9 +1,15 @@
-// Load saved delay value when popup opens
+// Load saved delay value and price negotiation when popup opens
 document.addEventListener('DOMContentLoaded', () => {
-  chrome.storage.local.get(['delayValue'], (result) => {
+  chrome.storage.local.get(['delayValue', 'priceNegotiation'], (result) => {
     if (result.delayValue) {
       document.getElementById('delay').value = result.delayValue;
     }
+    document.getElementById('priceNegotiation').checked = !!result.priceNegotiation;
+  });
+
+  // Save price negotiation setting on change
+  document.getElementById('priceNegotiation').addEventListener('change', (e) => {
+    chrome.storage.local.set({ priceNegotiation: e.target.checked });
   });
 });
 

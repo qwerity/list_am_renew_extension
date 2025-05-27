@@ -1,15 +1,18 @@
 // This function will be called from popup.js when the user clicks "Start Renew"
 async function renewAllItems(delay) {
-    // Get the default delay from storage if not provided
+    // Get the default delay and price negotiation setting from storage if not provided
+    let priceNegotiation = false;
     if (delay === undefined || delay === null) {
         try {
             const result = await new Promise(resolve => {
-                chrome.storage.local.get(['delayValue'], resolve);
+                chrome.storage.local.get(['delayValue', 'priceNegotiation'], resolve);
             });
             delay = result.delayValue || 10; // Default to 10ms if no stored value
+            priceNegotiation = result.priceNegotiation || false; // Default to false if no stored value
         } catch (error) {
-            console.error("Error retrieving delay value:", error);
+            console.error("Error retrieving settings:", error);
             delay = 10; // Default to 10ms if error
+            priceNegotiation = false;
         }
     }
     
@@ -29,6 +32,12 @@ async function renewAllItems(delay) {
         const itemId = item.getAttribute('onclick').match(/\d+/)[0];
 
         try {
+            // Prepare the request body
+            let bodyParams = "repeat=0&payment_method=0&use_max_renew_count=&_form_action=&form0_form_visited=1";
+            if (priceNegotiation) {
+                bodyParams = "open_to_price_negotiation=1&" + bodyParams;
+            }
+
             // Send the renew request
             const response = await fetch(`https://www.list.am/ad-renew?i=${itemId}`, {
                 method: 'POST',
@@ -43,7 +52,7 @@ async function renewAllItems(delay) {
                     "sec-gpc": "1",
                     "x-requested-with": "XMLHttpRequest"
                 },
-                body: "open_to_price_negotiation=1&repeat=0&payment_method=0&use_max_renew_count=&_form_action=&form0_form_visited=1",
+                body: bodyParams,
                 mode: "cors",
             });
 
