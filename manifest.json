@@ -26,7 +26,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["renew.js"],
+      "resources": ["renew.js", "republish.js"],
       "matches": ["*://www.list.am/*"]
     }
   ],

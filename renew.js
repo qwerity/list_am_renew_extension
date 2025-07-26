@@ -15,9 +15,9 @@ async function renewAllItems(delay) {
             priceNegotiation = false;
         }
     }
-    
+
     console.log(`Starting renewal process with ${delay}ms delay between items`);
-    
+
     // Select all elements that have the renew function in their 'onclick' attribute
     const items = document.querySelectorAll('a[onclick^="renew("]');
     console.log(`Found ${items.length} items to renew`);
@@ -68,7 +68,7 @@ async function renewAllItems(delay) {
         // Wait for the specified delay before moving to the next item
         await new Promise(resolve => setTimeout(resolve, delay));
     }
-    
+
     console.log("Renewal process completed for all items");
-    return Promise.resolve(); // Explicitly resolve the promise
+    return Promise.resolve({ process: 'Renew' }); // Explicitly resolve the promise with process type
 }

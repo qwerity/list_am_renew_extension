@@ -54,7 +54,7 @@ document.getElementById('startRenew').addEventListener('click', () => {
   const delay = parseInt(document.getElementById('delay').value);
   const statusDiv = document.getElementById('status');
   statusDiv.textContent = "Starting renew process...";
-  
+
   // Save the delay value for next time
   chrome.storage.local.set({delayValue: delay});
 
@@ -86,9 +86,9 @@ document.getElementById('startRenew').addEventListener('click', () => {
 function injectRenewProcess(delay) {
   // Check if renewAllItems is available now
   if (typeof renewAllItems === 'function') {
-    renewAllItems(delay).then(() => {
-      console.log("Renew process completed, sending done message");
-      chrome.runtime.sendMessage({message: "done"});
+    renewAllItems(delay).then((result) => {
+      console.log("Renew process completed, sending done message", result);
+      chrome.runtime.sendMessage({message: "done", process: result ? result.process : 'Renew'});
     }).catch(err => {
       console.error("Error in renewAllItems:", err);
       chrome.runtime.sendMessage({message: "error", error: err.message});
@@ -102,11 +102,12 @@ function injectRenewProcess(delay) {
 // Listen for messages from the background script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log("Received message in popup:", request);
-  
+
   if (request.message === "done") {
-    document.getElementById('status').textContent = "Renew process completed!";
-    showNotification("Complete", "Renew process completed successfully!");
-    
+    const processName = request.process || 'Process'; // Fallback to 'Process'
+    document.getElementById('status').textContent = `${processName} process completed!`;
+    showNotification("Complete", `${processName} process completed successfully!`);
+
     // Reload the current tab with improved mechanism
     console.log("Attempting to reload page after completion");
     reloadCurrentTab();
@@ -115,9 +116,29 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     document.getElementById('status').textContent = "Error: " + errorMsg;
     showNotification("Error", "Process error: " + errorMsg);
   }
-  
+
   return true; // Keep the message channel open
 });
+
+// Function to be injected into the tab for republishing
+function injectRepublishProcess(delay) {
+  if (typeof republishAllItems === 'function') {
+    republishAllItems(delay).then(result => {
+      console.log("Republish process completed, sending result message", result);
+      if (result.errorCount > 0) {
+        chrome.runtime.sendMessage({
+          message: "error",
+          error: `Completed with ${result.errorCount} errors out of ${result.total} items`
+        });
+      } else {
+        chrome.runtime.sendMessage({message: "done", process: result ? result.process : 'RePublish'});
+      }
+    }).catch(err => {
+      console.error("Error in republishAllItems:", err);
+      chrome.runtime.sendMessage({message: "error", error: err.message});
+    });
+  }
+}
 
 document.getElementById('rePublish').addEventListener('click', () => {
   const delay = parseInt(document.getElementById('delay').value) || 10;
@@ -129,59 +150,18 @@ document.getElementById('rePublish').addEventListener('click', () => {
 
   chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
     chrome.scripting.executeScript({
-      target: {tabId: tabs[0].id},
-      func: republishAllItemsInjected,
-      args: [delay]
+      target: { tabId: tabs[0].id },
+      files: ['republish.js']
+    }).then(() => {
+      chrome.scripting.executeScript({
+        target: { tabId: tabs[0].id },
+        function: injectRepublishProcess,
+        args: [delay]
+      });
+    }).catch(err => {
+      console.error("Error injecting republish script:", err);
+      statusDiv.textContent = "Error: " + err.message;
+      showNotification("Error", "Failed to inject script: " + err.message);
     });
   });
 });
-
-// Function to be injected into the tab for republishing
-function republishAllItemsInjected(delay) {
-  // Select all elements that have the republish class and an onclick attribute containing /rtao?type=5&post_id
-  const items = Array.from(document.querySelectorAll('a.ad-action-wrapper.republish[onclick*="/rtao?type=5"]'));
-  console.log(`Found ${items.length} items to republish`);
-
-  async function republishItem(itemId) {
-    try {
-      await fetch(`https://www.list.am/rtao?type=5&post_id=${itemId}&_rtt=1`, {
-        method: 'POST',
-        headers: {
-          "accept": "*/*",
-          "accept-language": "en-US,en;q=0.9,hy;q=0.8,ru;q=0.7",
-          "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
-          "priority": "u=1, i",
-          "sec-fetch-dest": "empty",
-          "sec-fetch-mode": "cors",
-          "sec-fetch-site": "same-origin",
-          "sec-gpc": "1",
-          "x-requested-with": "XMLHttpRequest"
-        },
-        body: "payment_method=&_form_action=&form0_form_visited=1",
-        mode: "cors",
-        credentials: "include"
-      });
-      console.log(`Republished item ${itemId} successfully.`);
-    } catch (error) {
-      console.error(`Error republishing item ${itemId}:`, error);
-    }
-  }
-
-  (async () => {
-    for (let item of items) {
-      // Extract post_id from the onclick attribute
-      const onclick = item.getAttribute('onclick');
-      const match = onclick.match(/post_id=(\d+)/);
-      if (!match) {
-        console.warn('No post_id found in republish button:', onclick);
-        continue;
-      }
-      const itemId = match[1];
-      await republishItem(itemId);
-      await new Promise(resolve => setTimeout(resolve, delay)); // Use the same delay as renew
-    }
-    console.log("Republish process completed for all items");
-    chrome.runtime.sendMessage({message: "done"});
-    window.location.reload(); // Refresh the page after all items are republished
-  })();
-}
